@@ -1,3 +1,11 @@
 Here is the beginning text file from master branch.
 
+<<<<<<< HEAD
 Editing from master branch after test branch creation.  Will Merge.
+=======
+Here is the entry from the test branch.  Will commit.
+
+Another entry from the test branch. Before publishing.  Will commit again.
+>>>>>>> test
+
+Reviewed and have accepted conflict when merging to master branch.
