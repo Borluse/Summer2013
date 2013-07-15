@@ -1,0 +1,78 @@
+using UnityEngine;
+using System.Collections;
+
+[AddComponentMenu("Dark Tonic/Killer Waves/Despawners/Triggered Despawner")]
+public class TriggeredDespawner : MonoBehaviour {
+	private Transform trans;
+
+	public EventDespawnSpecifics invisibleSpec = new EventDespawnSpecifics();
+	public EventDespawnSpecifics mouseOverSpec = new EventDespawnSpecifics();
+	public EventDespawnSpecifics mouseClickSpec = new EventDespawnSpecifics();
+	public EventDespawnSpecifics collisionSpec = new EventDespawnSpecifics();
+	public EventDespawnSpecifics triggerSpec = new EventDespawnSpecifics();
+	
+	void Awake() {
+		this.trans = this.transform;
+		SpawnedOrAwake();
+	}
+	
+	void OnSpawned() {
+		SpawnedOrAwake();
+	}
+	
+	protected virtual void SpawnedOrAwake() {
+		// for future code
+	}
+
+	void OnBecameInvisible() {
+		if (invisibleSpec.eventEnabled) {
+			SpawnUtility.Despawn(this.trans);		
+		}
+	}
+
+	void OnMouseEnter() {
+		if (mouseOverSpec.eventEnabled) {
+			SpawnUtility.Despawn(this.trans);
+		}
+	}
+	
+	void OnMouseDown() {
+		if (mouseClickSpec.eventEnabled) {
+			SpawnUtility.Despawn(this.trans);
+		}
+	}
+	
+	void OnCollisionEnter(Collision collision) {
+		// check filters for matches if turned on
+		if (!collisionSpec.eventEnabled) {
+			return;
+		}
+		
+		if (collisionSpec.useLayerFilter && !collisionSpec.matchingLayers.Contains(collision.gameObject.layer)) {
+			return;
+		}
+		
+		if (collisionSpec.useTagFilter && !collisionSpec.matchingTags.Contains(collision.gameObject.tag)) {
+			return;
+		}
+
+		SpawnUtility.Despawn(this.trans);
+	}
+	
+	void OnTriggerEnter(Collider other) {
+		// check filters for matches if turned on
+		if (!triggerSpec.eventEnabled) {
+			return;
+		}
+
+		if (triggerSpec.useLayerFilter && !triggerSpec.matchingLayers.Contains(other.gameObject.layer)) {
+			return;
+		}
+		
+		if (triggerSpec.useTagFilter && !triggerSpec.matchingTags.Contains(other.gameObject.tag)) {
+			return;
+		}
+
+		SpawnUtility.Despawn(this.trans);
+	}
+}

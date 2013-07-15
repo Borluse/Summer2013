@@ -1,0 +1,92 @@
+<html>
+<head><title>Scripting an Animated Sprite</title></head>
+<body>
+<html><head><title>$title</title><link rel="stylesheet" type="text/css" href="../style.css"></head><body><div id="navbar">
+<span class="align-logo">
+<img src="../logo.png">
+</span>
+<a href="http://www.unikronsoftware.com/2dtoolkit">Home</a>
+<img src="../dot.png">
+<a href="../index.html">Documentation</a>
+<img src="../dot.png">
+<a href="../html/annotated.html">Script Reference</a>
+<img src="../dot.png">
+<a href="http://www.unikronsoftware.com/2dtoolkit/forum">Forum</a>
+</div>
+<div id="pagewrapper"><h1>Scripting an Animated Sprite</h1>
+
+<p>You can easily access the tk2dAnimatedSprite behaviour from code to control various parameters and to make it play various clips. In this example, we will be making the animated sprite react to various key inputs. Create a C# script in your project and name it TutorialAnimController. Paste the following code block into the script.</p>
+
+<div class="codefile"><a href="code/TutorialAnimController.cs">code/TutorialAnimController.cs</a></div>
+
+<div style="color:Black;background-color:White;"><pre>
+<span style="color:Blue;">using</span> UnityEngine;
+<span style="color:Blue;">using</span> System.Collections;
+
+<span style="color:Blue;">public</span> <span style="color:Blue;">class</span> TutorialAnimController : MonoBehaviour {
+
+    <span style="color:Green;">// Link to the animated sprite</span>
+    <span style="color:Blue;">private</span> tk2dAnimatedSprite anim;
+
+    <span style="color:Green;">// State variable to see if the character is walking.</span>
+    <span style="color:Blue;">private</span> <span style="color:Blue;">bool</span> walking = <span style="color:Blue;">false</span>;
+
+    <span style="color:Green;">// Use this for initialization</span>
+    <span style="color:Blue;">void</span> Start () {
+        <span style="color:Green;">// This script must be attached to the sprite to work.</span>
+        anim = GetComponent&lt;tk2dAnimatedSprite&gt;();
+    }
+
+    <span style="color:Green;">// This is called once the hit animation has compelted playing</span>
+    <span style="color:Green;">// It returns to playing whatever animation was active before hit</span>
+    <span style="color:Green;">// was playing.</span>
+    <span style="color:Blue;">void</span> HitCompleteDelegate(tk2dAnimatedSprite sprite, <span style="color:Blue;">int</span> clipId) {
+        <span style="color:Blue;">if</span> (walking) {
+            anim.Play(<span style="color:#A31515;">&quot;walk&quot;</span>);
+        } 
+        <span style="color:Blue;">else</span> {
+            anim.Play(<span style="color:#A31515;">&quot;idle&quot;</span>);
+        }
+    }
+
+    <span style="color:Green;">// Update is called once per frame</span>
+    <span style="color:Blue;">void</span> Update () {
+        <span style="color:Blue;">if</span> (Input.GetKey(KeyCode.A)) {
+            <span style="color:Green;">// Only play the clip if it is not already playing.</span>
+            <span style="color:Green;">// Calling play will restart the clip if it is already playing.</span>
+            <span style="color:Blue;">if</span> (!anim.IsPlaying(<span style="color:#A31515;">&quot;hit&quot;</span>)) {
+                anim.Play(<span style="color:#A31515;">&quot;hit&quot;</span>);
+
+                <span style="color:Green;">// The delegate is used here to return to the previously</span>
+                <span style="color:Green;">// playing clip after the &quot;hit&quot; animation is done playing.</span>
+                anim.animationCompleteDelegate = HitCompleteDelegate;
+            }
+        }
+
+        <span style="color:Blue;">if</span> (Input.GetKey(KeyCode.D)) {
+            <span style="color:Blue;">if</span> (!anim.IsPlaying(<span style="color:#A31515;">&quot;walk&quot;</span>)) {
+
+                <span style="color:Green;">// Walk is a looping animation</span>
+                <span style="color:Green;">// A looping animation never completes...</span>
+                anim.Play(<span style="color:#A31515;">&quot;walk&quot;</span>);
+
+                <span style="color:Green;">// We dont have any reason for detecting when it completes</span>
+                anim.animationCompleteDelegate = <span style="color:Blue;">null</span>;
+                walking = <span style="color:Blue;">true</span>;
+            }
+        }
+
+        <span style="color:Blue;">if</span> (Input.GetKey(KeyCode.W)) {
+            <span style="color:Blue;">if</span> (!anim.IsPlaying(<span style="color:#A31515;">&quot;idle&quot;</span>)) {
+                anim.Play(<span style="color:#A31515;">&quot;idle&quot;</span>);
+                anim.animationCompleteDelegate = <span style="color:Blue;">null</span>;
+                walking = <span style="color:Blue;">false</span>;
+            }
+        }
+    }
+}
+</pre></div>
+
+<p>Attach this script to the animated sprite, and press play to start the game. Observe that you can use the A, D and W keys to make it perform various actions. The animation completed delegate reacts differently to the state of the animation prior to triggering the hit clip.</p>
+</div></body></html></body>
+</html>

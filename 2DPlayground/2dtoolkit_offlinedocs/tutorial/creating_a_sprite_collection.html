@@ -1,0 +1,65 @@
+<html>
+<head><title>Creating a Sprite Collection</title></head>
+<body>
+<html><head><title>$title</title><link rel="stylesheet" type="text/css" href="../style.css"></head><body><div id="navbar">
+<span class="align-logo">
+<img src="../logo.png">
+</span>
+<a href="http://www.unikronsoftware.com/2dtoolkit">Home</a>
+<img src="../dot.png">
+<a href="../index.html">Documentation</a>
+<img src="../dot.png">
+<a href="../html/annotated.html">Script Reference</a>
+<img src="../dot.png">
+<a href="http://www.unikronsoftware.com/2dtoolkit/forum">Forum</a>
+</div>
+<div id="pagewrapper"><h1>Creating a Sprite Collection</h1>
+
+<p>Sprite collections form the basis of the 2d toolkit. They hold a list of textures and their associated properties. The system handles creation of atlases and has various options for customization. 
+Once created, any changes to your sprites will automatically rebuild the atlas.</p>
+
+<blockquote>
+  <p>From version 1.60 you can also add fonts into a sprite collection. Fonts added into a sprite collection can't use the gradients feature as that will require a separate material.</p>
+</blockquote>
+
+<p>This walkthrough will go through the process of creating a simple sprite collection with the assets provided with 2D Toolkit.</p>
+
+<ol>
+<li><p>Create a sprite collection by clicking on "Create > tk2d > Sprite Collection" in the Project Window. Alternatively you can find this menu in "Assets > Create > tk2d > Sprite Collection".</p>
+
+<p><img src="img/CreatingSpriteCollection.png" alt="img/CreatingSpriteCollection.png"></p>
+
+<blockquote>
+  <p>You should create a sprite collection within a folder. This will keep things nice and tidy, as the SpriteCollection will generate files when you commit the changes. This is not required, however.</p>
+</blockquote></li>
+<li><p>You will now have a sprite collection in your project. You should now rename this to something sensible, so you will be able to find it later. We have renamed ours to "TutorialSpriteCollection"</p>
+
+<p><img src="img/CreatedSpriteCollection.png" alt="img/CreatedSpriteCollection.png"></p></li>
+<li><p>Click on "Open Editor..." in the Sprite Collection inspector to open up the Sprite Collection editor.</p>
+
+<p><img src="img/OpenSpriteCollectionEditor.png" alt="img/OpenSpriteCollectionEditor.png"></p></li>
+<li><p>You will now need to add your sprites to the sprite collection. You can do this by dragging textures to the "Drop Textures Here" box. In this example, we are dragging 3 textures from the demo directory. You can drag any of your textures, stored anywhere in your project. In this example, we will be dragging crate, ground and rock from /TK2DROOT/tk2d_demo/demospritecollection.</p>
+
+<p>The textures in the collection will now be selected. You may now change any default parameters for the newly added sprites.</p>
+
+<p><img src="img/DraggingTextures.png" alt="img/DraggingTextures.png"></p>
+
+<blockquote>
+  <p>Note: You don't have to add all your textures at the same time. You can add them individually, or over a period of time.</p>
+</blockquote></li>
+<li><p>Click commit</p>
+
+<p><img src="img/ClickCommit.png" alt="img/ClickCommit.png"></p>
+
+<blockquote>
+  <p>Note: You will need to click commit whenever you make any changes in the Sprite Collection Editor.</p>
+</blockquote>
+
+<p>At this point, your Sprite Collection has created one or more atlases with the textures you have given it. These atlases and all the other associated data will be regenerated automatically whenever the source data changes.</p>
+
+<blockquote>
+  <p>Note: The Sprite Collection is set up by default to create Pixel Perfect sprites at a 960x640 resolution and an Ortho Camera with an orthographic size of 1. If your target resolution or camera settings are different, please change the Target Height property in the settings panel and recommit the changes.</p>
+</blockquote></li>
+</ol>
+</div></body></html></body>
+</html>

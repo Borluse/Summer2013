@@ -1,0 +1,125 @@
+<html>
+<head><title>Tile Map Tutorial</title></head>
+<body>
+<html><head><title>$title</title><link rel="stylesheet" type="text/css" href="../style.css"></head><body><div id="navbar">
+<span class="align-logo">
+<img src="../logo.png">
+</span>
+<a href="http://www.unikronsoftware.com/2dtoolkit">Home</a>
+<img src="../dot.png">
+<a href="../index.html">Documentation</a>
+<img src="../dot.png">
+<a href="../html/annotated.html">Script Reference</a>
+<img src="../dot.png">
+<a href="http://www.unikronsoftware.com/2dtoolkit/forum">Forum</a>
+</div>
+<div id="pagewrapper"><h1>Tile Map Tutorial</h1>
+
+<blockquote>
+  <p>The Tile Mapper is currently in <strong>Beta</strong>. This means that features may be incomplete, and are subject to change. However, from version 1.80, the data is considered stable and will be supported in all future versions.</p>
+  
+  <p><strong>This document is still a work in progress.</strong></p>
+</blockquote>
+
+<h2>Features</h2>
+
+<p>The tile mapper currently supports the following features:</p>
+
+<ul>
+<li>Support for a uniform grid of tiles. (Hex and isometric tiles may be supported in a future release if there is demand)</li>
+<li>Internal layer support for complex brushes. Brushes may contain one or more layers worth of data.</li>
+<li>Brushes and other settings can be shared between scenes.</li>
+<li>Single, rectangle and multi select brush construction.</li>
+<li>Random distribution for tile variation.</li>
+<li>Rectangle painting - select 3 horizontal, 3 vertical or 3x3 tiles, and you the system can be set up to treat these as edge tiles.</li>
+<li>Pick up tiles &amp; brushes from the scene.</li>
+<li>Supports more than one tile map within the scene.</li>
+<li>Optimized polygon collider construction - you are not limited to square colliders.</li>
+<li>Smooth vertex color painting. Paint "light" onto your tilemaps!</li>
+<li>Attach data prefabs to tiles - painting these tiles on will spawn prefabs.</li>
+<li>Undo while painting</li>
+</ul>
+
+<h2>Walkthrough</h2>
+
+<ol>
+<li><p>Create a sprite collection of your tiles by using any available method. Set up colliders for the sprites. You may use box colliders or polygon colliders.</p></li>
+<li><p>Create a new tilemap (Create > tk2d > Tilemap)</p>
+
+<p><img src="img/createtilemap.png" alt="Create Tilemap"></p></li>
+<li><p>Select and click edit on the newly created tilemap.</p>
+
+<p><img src="img/setuptilemap.png" alt="Set up Tilemap"></p></li>
+<li><p>Create or reuse tilemap data, and editor data objects.</p>
+
+<blockquote>
+  <p><strong>Tilemap data</strong> objects store information such as tile size, spawned prefabs and other shared data. Reuse tilemap data objects when you need to share data between scenes. These aren't tied in to the actual sprite collection, so as long as the sprite order is the same, you can have a snow sprite collection, a grass one, etc and reskin your level with ease.</p>
+  
+  <p><strong>Tilemap editor data</strong> objects store brushes, and other editor preferences.</p>
+</blockquote></li>
+<li><p>You can also drag in the spritecollection you wish to use for this tilemap at this point, if the system hasn't automatically picked the right one.</p></li>
+<li><p>Once the data is set up you will be presented with the full interface.</p>
+
+<p><img src="img/tilemap.png" alt="Tilemap"></p></li>
+<li><p>The first thing to do here is to make sure the <strong>Tiles Per Row</strong> and <strong>Display Scale</strong> parameters are set up correctly. Known issue: the preview currently will not clip correctly if it hits the edge of the window.</p></li>
+<li><p>Switch to Paint mode in the toolbar above, select a few tiles and start painting!</p></li>
+<li><p>Once you are done painting, remember to click <strong>Commit</strong>. You don't have to do this while testing, pressing play will automatically commit the data for you, but take care not to save your level like this. If the scene is saved while in Edit mode, the data will have to be reconstructed as the game is loaded in, and this may take a while.</p></li>
+</ol>
+
+<h2>Painting</h2>
+
+<h3>Controls (PC)</h3>
+
+<ul>
+<li>Left click - paint.</li>
+<li>Alt click - to pick up a tile.</li>
+<li>Ctrl click - to erase a tile.</li>
+</ul>
+
+<h3>Controls (Mac)</h3>
+
+<ul>
+<li>Left click - paint.</li>
+<li>Ctrl click - to pick up a tile.</li>
+<li>Command click - to erase a tile.</li>
+</ul>
+
+<p><img src="img/paint.png" alt="Paint"></p>
+
+<h3>Selecting tiles in the palette (PC)</h3>
+
+<ul>
+<li>Left click - clear selection and select one tile</li>
+<li>Click + drag - selects a rectangle of tiles</li>
+<li>Ctrl + click - adds or removes a tile to a multiselection</li>
+</ul>
+
+<h3>Selecting tiles in the palette (Mac)</h3>
+
+<ul>
+<li>Left click - clear selection and select one tile</li>
+<li>Click + drag - selects a rectangle of tiles</li>
+<li>Command + click - adds or removes a tile to a multiselection</li>
+</ul>
+
+<h3>Paint modes</h3>
+
+<p>Brush - Paint one tile at a time. Click dragging wil leave a trail of tiles.
+Random - Works best with multiselected tiles. Randomly picks a tile and paints that per cell. Click dragging will draw a rectangle and fill it randomly with tiles from the current selection.
+Edged - Works with 3 horizontal, 3 vertical or 3x3 tiles. Draw a rectangle in the scene and the edge tiles will be used in the edges, and the center tile will fill the rest of the rectangle. Very much like 9-slice.</p>
+
+<h2>Painting Color</h2>
+
+<p>Click on "Create Color Channel" to start painting vertex colors into the tilemap.</p>
+
+<p><img src="img/color.png" alt="Color"></p>
+
+<h2>Data</h2>
+
+<p>This lets you set up prefabs to spawn instead of tiles. Use this to mark player start points, win points, etc.</p>
+
+<p><img src="img/data.png" alt="Data"></p>
+
+<p>Select a tile, and drag a prefab into the slot.</p>
+</div></body></html></body>
+</html>

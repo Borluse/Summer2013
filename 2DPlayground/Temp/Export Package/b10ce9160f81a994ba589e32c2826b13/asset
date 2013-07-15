@@ -1,0 +1,143 @@
+using UnityEditor;
+using UnityEngine;
+using System.Collections;
+
+public static class DTInspectorUtility {
+	public const string ALERT_TITLE = "Killer Waves Alert";
+	public const string ALERT_OK_TEXT = "Ok";
+	
+	private const string FOLD_OUT_TOOLTIP = "Click to expand or collapse";
+    private const int CONTROLS_DEFAULT_LABEL_WIDTH = 140;
+	
+	public enum FunctionButtons { None, Add, Remove, ShiftUp, ShiftDown }
+	
+    public static FunctionButtons AddFoldOutListItemButtons(int position, int totalPositions, string itemName, bool showMoveButtons = false)
+    {
+        EditorGUILayout.BeginHorizontal(GUILayout.MaxWidth(100));
+
+        // A little space between button groups
+        GUILayout.Space(24);
+		
+		bool upPressed = false;
+		bool downPressed = false;
+		
+		if (showMoveButtons) {
+	        if (position > 0) {
+				// the up arrow.
+				var upArrow = '\u25B2'.ToString();
+        		upPressed = GUILayout.Button(new GUIContent(upArrow, "Click to shift " + itemName + " up"),
+                                          EditorStyles.toolbarButton);
+			}
+
+			if (position < totalPositions - 1) {
+	        	// The down arrow will move things towards the end of the List
+				var dnArrow = '\u25BC'.ToString();
+	        	downPressed = GUILayout.Button(new GUIContent(dnArrow, "Click to shift " + itemName + " down"), 
+					EditorStyles.toolbarButton);
+			}
+		}
+
+			
+        // Add button - Process presses later
+        bool addPressed = GUILayout.Button(new GUIContent("+", "Click to add new " + itemName + " after this one"),
+                                           EditorStyles.toolbarButton);
+
+        GUILayout.Space(4);
+		
+		// Remove Button - Process presses later
+        bool removePressed = GUILayout.Button(new GUIContent("-", "Click to remove last " + itemName),
+                                              EditorStyles.toolbarButton);
+
+        EditorGUILayout.EndHorizontal();
+
+        // Return the pressed button if any
+        if (removePressed == true) {
+			return FunctionButtons.Remove;
+		}         
+		if (addPressed == true) {
+			return FunctionButtons.Add;
+		}
+		if (upPressed) {
+			return FunctionButtons.ShiftUp;
+		}
+		if (downPressed) {
+			return FunctionButtons.ShiftDown;
+		}
+
+        return FunctionButtons.None;
+    }
+	
+	public static bool Foldout(bool expanded, string label)
+    {
+        EditorGUIUtility.LookLikeInspector();
+        var content = new GUIContent(label, FOLD_OUT_TOOLTIP);
+        expanded = EditorGUILayout.Foldout(expanded, content);
+        LookLikeControls();
+
+        return expanded;
+    }
+	
+    public static void LookLikeControls()
+    {
+        EditorGUIUtility.LookLikeControls(CONTROLS_DEFAULT_LABEL_WIDTH);
+    }
+	
+	public static void DrawTexture(Texture tex) {
+		if (tex == null) {
+			Debug.Log("Logo texture missing");
+		}
+		
+		Rect rect = GUILayoutUtility.GetRect(0f, 0f);
+		rect.width = tex.width;
+		rect.height = tex.height;
+		GUILayout.Space(rect.height);
+		GUI.DrawTexture(rect, tex);
+	}
+	
+	public static void ShowColorWarning(string warningText) {
+		GUI.color = Color.green;
+		EditorGUILayout.LabelField(warningText, EditorStyles.miniLabel);
+		GUI.color = Color.white;
+	}
+	
+	public static string[] GetPrefabPoolNames() {
+		var poolsHolder = GetPoolsHolder;
+
+		if (poolsHolder == null) {
+			//Debug.LogError(LevelSettings.NO_PREFAB_POOLS_CONTAINER_ALERT);
+			return null;
+		}
+		
+		var prefabPoolNames = new string[poolsHolder.childCount];
+		
+		for (var i = 0; i < poolsHolder.childCount; i++) {
+			var oChild = poolsHolder.GetChild(i);
+			prefabPoolNames[i] = oChild.name;
+		}
+		
+		return prefabPoolNames;
+	}
+	
+	private static Transform GetPoolsHolder {
+		get {
+			return GetLevelSettings.transform.FindChild(LevelSettings.PREFAB_POOLS_CONTAINER_TRANS_NAME);
+		}
+	}
+	
+	public static Transform GetFirstMatchingPrefabPool(int poolIndex) {
+		var poolsHolder = GetPoolsHolder;
+
+		if (poolsHolder == null) {
+			return null;
+		}
+		
+		var oChild = poolsHolder.GetChild(poolIndex);
+		return oChild;
+	}
+	
+	public static LevelSettings GetLevelSettings {
+		get {
+			return (LevelSettings) GameObject.FindObjectOfType(typeof(LevelSettings));		
+		}
+	}
+}

@@ -1,0 +1,93 @@
+using UnityEditor;
+using UnityEngine;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Text;
+
+[CustomEditor(typeof(TriggeredDespawner))]
+public class TriggeredDespawnerInspector : Editor {
+	public override void OnInspectorGUI() {
+        EditorGUIUtility.LookLikeControls();
+		
+		TriggeredDespawner settings = (TriggeredDespawner)target;
+		
+		DTInspectorUtility.DrawTexture(DTInspectorUtility.GetLevelSettings.logoTexture);
+			
+		EditorGUI.indentLevel = -1;
+		
+		List<bool> changedList = new List<bool>();
+		changedList.Add(RenderEventTypeControls(settings.invisibleSpec, "Invisible Event", TriggeredSpawner.EventType.Invisible));
+		changedList.Add(RenderEventTypeControls(settings.mouseOverSpec, "MouseOver Event", TriggeredSpawner.EventType.MouseOver));
+		changedList.Add(RenderEventTypeControls(settings.mouseClickSpec, "MouseClick Event", TriggeredSpawner.EventType.MouseClick));
+		changedList.Add(RenderEventTypeControls(settings.collisionSpec, "Collision Event", TriggeredSpawner.EventType.OnCollision));
+		changedList.Add(RenderEventTypeControls(settings.triggerSpec, "Trigger Event", TriggeredSpawner.EventType.OnTrigger));
+		
+		if (GUI.changed || changedList.Contains(true)) {
+  			EditorUtility.SetDirty(target);	// or it won't save the data!!
+		}
+		
+		//DrawDefaultInspector();
+    }
+	
+	private bool RenderEventTypeControls(EventDespawnSpecifics despawnSettings, string toggleText, TriggeredSpawner.EventType eventType) {
+		EditorGUI.indentLevel = 2;
+        EditorGUILayout.BeginHorizontal(EditorStyles.objectFieldThumb);
+		despawnSettings.eventEnabled = EditorGUILayout.Toggle(toggleText, despawnSettings.eventEnabled);
+        EditorGUILayout.EndHorizontal();
+		 
+		var isDirty = false;
+		
+		if (despawnSettings.eventEnabled) {
+			if (TriggeredSpawner.eventsWithTagLayerFilters.Contains(eventType)) {
+				despawnSettings.useLayerFilter = EditorGUILayout.BeginToggleGroup("Layer filters", despawnSettings.useLayerFilter);
+				if (despawnSettings.useLayerFilter) {
+					for (var i = 0; i < despawnSettings.matchingLayers.Count; i++) {
+						despawnSettings.matchingLayers[i] = EditorGUILayout.LayerField("Layer Match " + (i + 1), despawnSettings.matchingLayers[i]);
+					}
+					EditorGUILayout.BeginHorizontal();
+					GUILayout.Space(24);
+					if (GUILayout.Button(new GUIContent("Add", "Click to add a layer match at the end"), GUILayout.Width(60))) {
+						despawnSettings.matchingLayers.Add(0);
+						isDirty = true;
+					}
+					if (despawnSettings.matchingLayers.Count > 1) {
+						if (GUILayout.Button(new GUIContent("Remove", "Click to remove the last layer match"), GUILayout.Width(60))) {
+							despawnSettings.matchingLayers.RemoveAt(despawnSettings.matchingLayers.Count - 1);
+							isDirty = true;
+						}
+					}
+					EditorGUILayout.EndHorizontal();
+				}
+				EditorGUILayout.EndToggleGroup();
+				
+				despawnSettings.useTagFilter = EditorGUILayout.BeginToggleGroup("Tag filter", despawnSettings.useTagFilter);
+				if (despawnSettings.useTagFilter) {
+					for (var i = 0; i < despawnSettings.matchingTags.Count; i++) {
+						despawnSettings.matchingTags[i] = EditorGUILayout.TagField("Tag Match " + (i + 1), despawnSettings.matchingTags[i]);
+					}
+					EditorGUILayout.BeginHorizontal();
+					GUILayout.Space(24);
+					if (GUILayout.Button(new GUIContent("Add", "Click to add a tag match at the end"), GUILayout.Width(60))) {
+						despawnSettings.matchingTags.Add("Untagged");
+						isDirty = true;
+					}
+					if (despawnSettings.matchingTags.Count > 1) {
+						if (GUILayout.Button(new GUIContent("Remove", "Click to remove the last tag match"), GUILayout.Width(60))) {
+							despawnSettings.matchingTags.RemoveAt(despawnSettings.matchingLayers.Count - 1);
+							isDirty = true;
+						}
+					}
+					EditorGUILayout.EndHorizontal();
+				}
+				EditorGUILayout.EndToggleGroup();
+			} else {
+				EditorGUI.indentLevel = 1;
+				DTInspectorUtility.ShowColorWarning("No additional properties for this event type.");
+			}
+		}
+		
+		return isDirty;
+	}
+
+}

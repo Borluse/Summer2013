@@ -1,0 +1,60 @@
+<html>
+<head><title>tk2dCamera</title></head>
+<body>
+<html><head><title>$title</title><link rel="stylesheet" type="text/css" href="../style.css"></head><body><div id="navbar">
+<span class="align-logo">
+<img src="../logo.png">
+</span>
+<a href="http://www.unikronsoftware.com/2dtoolkit">Home</a>
+<img src="../dot.png">
+<a href="../index.html">Documentation</a>
+<img src="../dot.png">
+<a href="../html/annotated.html">Script Reference</a>
+<img src="../dot.png">
+<a href="http://www.unikronsoftware.com/2dtoolkit/forum">Forum</a>
+</div>
+<div id="pagewrapper"><h1>tk2dCamera</h1>
+
+<h2>tk2dCamera</h2>
+
+<p>One world unit in tk2dCamera is 1 pixel unless overriden.</p>
+
+<p><img src="img/camera_v3.png" alt="Camera_v3"></p>
+
+<h3>Resolution Overrides</h3>
+
+<p>The tk2dCamera always tries to display pixel perfect at any resolution. If your source background is 960x480, for instance, and your target resolution is 480x320, you will be viewing a zoomed in section of the background. A resolution override can be set to make the camera scale the output down by 0.5x, thus fitting the 960x480 background in the 480x320 screen.</p>
+
+<p><strong>Native Resolution</strong> - 2D Toolkit needs to know at what resolution your artwork is meant to be pixel perfect. Enter the resolution you authored for here.</p>
+
+<p><strong>Overrides</strong> - Add overrides to override for a specific resolution, or use wildcards. -1 in a dimension will match any resolution. An override of 480x-1 will match 480x640, 480x960 and indeed 480 x anything. Overrides are processed in order so any match early on will be used. You can use this to your advantage by having specific resolution overrides, and a "Catch all" wildcard resolution at the end to handle all possible resolutions elegantly. When you click "Add override", you'll get a wildcard resolution matching anything.</p>
+
+<p><strong>Override name</strong> - Name your resolution overrides in the event you have many of them.</p>
+
+<p><strong>Override width and height</strong> - Resolution to match for this override. Set to -1 to match any dimension in that axis. Set both to -1 to match any resolution.</p>
+
+<p><strong>Auto Scale</strong>
+<em>None</em> - You specify an explicit scale
+<em>Fit width</em> - The camera will attempt to fit the width. The camera might overflow vertically.
+<em>Fit height</em> - The camera will fit the height. The camera might overflow horizontally.
+<em>Fit visible</em> - Fit the larger axis. The entire image (based on native resolution) will always be visible.</p>
+
+<p><strong>Fit Mode</strong>
+<em>Constant</em> - You specify an explict amount to offset from the bottom left.
+<em>Center</em> - The camera will automatically center the screen. You may need to letterbox.</p>
+
+<h3>Camera Resolution</h3>
+
+<p><strong>Force Editor Resolution</strong> - Forces a particular resolution in the editor. The game window should be set to the same resolution, otherwise the game window output could be rendered incorrectly.</p>
+
+<p><strong>Preset / Width / Height</strong> - Pick from a preset resolution, or enter your own custom resolution. This will be resolution simulated. If your game window is set to the same resolution, and is big enough that the viewport isn't compressed, the output will be pixel perfect. The tk2dCamera preview window will display in this resolution.</p>
+
+<h3>Scene View</h3>
+
+<blockquote>
+  <p>Due to a bug in Unity, the Camera preview is incorrect. Use the tk2dCamera preview window instead the Unity one for an accurate representation of what you'll see when running on target. The game window output should be correct, as long as you set the correct resolution. You can collapse the camera component to hide the Unity preview window.</p>
+</blockquote>
+
+<p><img src="img/tk2dcamerapreview.png" alt="Camera Preview"></p>
+</div></body></html></body>
+</html>

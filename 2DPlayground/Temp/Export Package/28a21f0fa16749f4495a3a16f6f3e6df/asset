@@ -1,0 +1,72 @@
+using UnityEngine;
+using System.Collections;
+using System.Collections.Generic;
+
+public static class SpawnUtility {
+	private static bool appIsShuttingDown = false;
+	
+	public static Transform Spawn(Transform spawn, Vector3 spawnPos, Quaternion spawnRotation) {
+		if (appIsShuttingDown) { // VERY IMPORTANT! Do not delete this part.
+			return null;
+		}
+		
+		/* Non Pool Manager Code */
+		var gameObj = GameObject.Instantiate(spawn.gameObject, spawnPos, spawnRotation) as GameObject;
+		return gameObj.transform;
+		
+		/* TO USE POOL MANAGER, USE CODE LIKE THIS INSTEAD OF THE ABOVE */
+		//return PoolManager.Pools["YourPoolName"].Spawn(spawn, spawnPos, spawnRotation);
+	}
+	
+	public static void Despawn(Transform spawned) {
+		GameObject.Destroy(spawned.gameObject);
+		
+		/* TO USE POOL MANAGER, USE CODE LIKE THIS INSTEAD OF THE ABOVE */
+		//PoolManager.Pools["YourPoolName"].Despawn(spawned);
+	}
+	
+	public static bool HasActiveMember(List<Transform> members) {
+		bool hasActiveMember = false;
+		
+		foreach (var t in members) {
+			if (t == null || !IsActive(t.gameObject)) { // .active will work with Pool Manager.
+				continue;
+			}
+			
+			hasActiveMember = true;
+		}
+		
+		return hasActiveMember;
+	}
+	
+	// UNITY 4.0 should use these
+	/*
+	public static bool IsActive(GameObject go) {
+		//return go.active;
+		return go.activeInHierarchy;
+	}
+	
+	public static void SetActive(GameObject go, bool isActive) {
+		go.SetActive(isActive);
+	}*/
+	// END UNITY 4.0
+	
+	// UNITY 3 should use these
+	public static bool IsActive(GameObject go) {
+		return go.active;
+	}
+	
+	public static bool AppIsShuttingDown {
+		get {
+			return appIsShuttingDown;
+		}
+		set {
+			appIsShuttingDown = value;
+		}
+	}
+	
+	public static void SetActive(GameObject go, bool isActive) {
+		go.SetActiveRecursively(isActive);
+	}
+	// END UNITY 3.0
+}

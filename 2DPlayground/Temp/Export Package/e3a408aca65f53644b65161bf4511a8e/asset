@@ -1,0 +1,8 @@
+using UnityEngine;
+using System.Collections;
+
+public class Instructions : MonoBehaviour {
+	void OnGUI() {
+		GUI.Label(new Rect(10, 10, 760, 60), "This scene has 6 waves of various settings. Left / right arrow keys and mouse click to fire. Feel free to tweak the settings. Notice the music changing in scene 3, and the 'prefab pool' in wave 6 which allows for spawning of mutiple different prefabs from the same spawner wave. For support, go to 'Support Page' under the Dark Tonic menu in Unity! Happy gaming!");
+	}
+}

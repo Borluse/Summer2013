@@ -1,0 +1,464 @@
+using UnityEngine;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+
+[AddComponentMenu("Dark Tonic/Killer Waves/Spawners/Triggered Spawner")]
+public class TriggeredSpawner : MonoBehaviour {
+	public static List<TriggeredSpawner.EventType> eventsThatCanRepeatWave = new List<TriggeredSpawner.EventType>() {
+		EventType.Visible,
+		EventType.OnTrigger,
+		EventType.MouseClick,
+		EventType.MouseOver,
+		EventType.OnCollision,
+		EventType.OnSpawned
+	};
+
+	public static List<TriggeredSpawner.EventType> eventsWithTagLayerFilters = new List<TriggeredSpawner.EventType>() {
+		EventType.OnCollision,
+		EventType.OnTrigger
+	};
+
+	public static List<TriggeredSpawner.EventType> eventsWithInflexibleWaveLength = new List<TriggeredSpawner.EventType>() {
+		TriggeredSpawner.EventType.Invisible,
+		TriggeredSpawner.EventType.OnDespawned
+	};
+	
+	public TriggeredWaveSpecifics visibleWave = new TriggeredWaveSpecifics();
+	public TriggeredWaveSpecifics invisibleWave = new TriggeredWaveSpecifics();
+	public TriggeredWaveSpecifics mouseOverWave = new TriggeredWaveSpecifics();
+	public TriggeredWaveSpecifics mouseClickWave = new TriggeredWaveSpecifics();
+	public TriggeredWaveSpecifics collisionWave = new TriggeredWaveSpecifics();
+	public TriggeredWaveSpecifics triggerWave = new TriggeredWaveSpecifics();
+	public TriggeredWaveSpecifics spawnedWave = new TriggeredWaveSpecifics();
+	public TriggeredWaveSpecifics despawnedWave = new TriggeredWaveSpecifics();
+	
+	private TriggeredWaveMetaData visibleWaveMeta = null;
+	private TriggeredWaveMetaData invisibleWaveMeta = null;
+	private TriggeredWaveMetaData mouseOverWaveMeta = null;
+	private TriggeredWaveMetaData mouseClickWaveMeta = null;
+	private TriggeredWaveMetaData collisionWaveMeta = null;
+	private TriggeredWaveMetaData triggerWaveMeta = null;
+	private TriggeredWaveMetaData spawnedWaveMeta = null;
+	private TriggeredWaveMetaData despawnedWaveMeta = null;
+	
+	public enum EventType {
+		Visible,
+		Invisible,
+		MouseOver,
+		MouseClick,
+		OnCollision,
+		OnTrigger,
+		OnSpawned,
+		OnDespawned
+	}
+	
+	private Transform trans;
+	private bool isVisible;
+	
+	void Awake() {
+		this.trans = this.transform;
+		SpawnedOrAwake();
+	}
+	
+	void OnSpawned() {
+		SpawnedOrAwake();
+		
+		if (LevelSettings.IsGameOver || !spawnedWave.enableWave) {
+			return;
+		}
+
+		invisibleWaveMeta = null; // stop "visible" wave.
+		
+		SetupNextWave(spawnedWave, EventType.OnSpawned);
+		SpawnFromWaveMeta(spawnedWaveMeta, EventType.OnSpawned);
+	}
+	
+	protected virtual void SpawnedOrAwake() {
+		this.isVisible = false;
+		
+		// reset any in-progress waves that were despawned.
+		visibleWaveMeta = null;
+		invisibleWaveMeta = null;
+		mouseOverWaveMeta = null;
+		mouseClickWaveMeta = null;
+		collisionWaveMeta = null;
+		triggerWaveMeta = null;
+		spawnedWaveMeta = null;
+		despawnedWaveMeta = null;
+	}
+	
+	void OnDespawned() {
+		if (LevelSettings.IsGameOver || !despawnedWave.enableWave) {
+			return;
+		}
+
+		visibleWaveMeta = null; // stop "visible" wave.
+		
+		SetupNextWave(despawnedWave, EventType.OnDespawned);
+		SpawnFromWaveMeta(despawnedWaveMeta, EventType.OnDespawned);
+	}
+	
+	void OnBecameVisible() {
+		if (LevelSettings.IsGameOver || !visibleWave.enableWave) {
+			return;
+		}
+
+		if (this.isVisible) {
+			return; // to fix Unity bug.
+		}
+
+		invisibleWaveMeta = null; // stop "visible" wave.
+		
+		this.isVisible = true;
+		SetupNextWave(visibleWave, EventType.Visible);
+		SpawnFromWaveMeta(visibleWaveMeta, EventType.Visible);
+	}
+	
+	void OnBecameInvisible() {
+		if (LevelSettings.IsGameOver || !invisibleWave.enableWave) {
+			return;
+		}
+		
+		visibleWaveMeta = null; // stop "visible" wave.
+		
+		this.isVisible = false;
+		SetupNextWave(invisibleWave, EventType.Invisible);
+		SpawnFromWaveMeta(invisibleWaveMeta, EventType.Invisible);
+	}
+
+	void OnMouseEnter() {
+		if (LevelSettings.IsGameOver || !mouseOverWave.enableWave) {
+			return;
+		}
+
+		SetupNextWave(mouseOverWave, EventType.MouseOver);
+		SpawnFromWaveMeta(mouseOverWaveMeta, EventType.MouseOver);
+	}
+	
+	void OnMouseDown() {
+		if (LevelSettings.IsGameOver || !mouseClickWave.enableWave) {
+			return;
+		}
+
+		SetupNextWave(mouseClickWave, EventType.MouseClick);
+		SpawnFromWaveMeta(mouseOverWaveMeta, EventType.MouseOver);
+	}
+	
+	void OnCollisionEnter(Collision collision) {
+		if (LevelSettings.IsGameOver || !collisionWave.enableWave) {
+			return;
+		}
+
+		// check filters for matches if turned on
+		if (collisionWave.useLayerFilter && !collisionWave.matchingLayers.Contains(collision.gameObject.layer)) {
+			return;
+		}
+		
+		if (collisionWave.useTagFilter && !collisionWave.matchingTags.Contains(collision.gameObject.tag)) {
+			return;
+		}
+		
+		SetupNextWave(collisionWave, EventType.OnCollision);
+		SpawnFromWaveMeta(collisionWaveMeta, EventType.OnCollision);
+	}
+	
+	void OnTriggerEnter(Collider other) {
+		if (LevelSettings.IsGameOver || !triggerWave.enableWave) {
+			return;
+		}
+
+		// check filters for matches if turned on
+		if (triggerWave.useLayerFilter && !triggerWave.matchingLayers.Contains(other.gameObject.layer)) {
+			return;
+		}
+		
+		if (triggerWave.useTagFilter && !triggerWave.matchingTags.Contains(other.gameObject.tag)) {
+			return;
+		}
+
+		SetupNextWave(triggerWave, EventType.OnTrigger);
+		SpawnFromWaveMeta(triggerWaveMeta, EventType.OnTrigger);
+	}
+	
+	private bool HasActiveSpawningWave {
+		get {
+			return visibleWaveMeta != null 
+				|| invisibleWaveMeta != null
+				|| mouseOverWaveMeta != null
+				|| mouseClickWaveMeta != null
+				|| collisionWaveMeta != null
+				|| triggerWaveMeta != null
+				|| spawnedWaveMeta != null
+				|| despawnedWaveMeta != null;
+		}
+	}
+	
+	void FixedUpdate() {
+		if (LevelSettings.IsGameOver || !HasActiveSpawningWave) {
+			return;
+		}
+		
+		SpawnFromWaveMeta(visibleWaveMeta, EventType.Visible);
+		SpawnFromWaveMeta(invisibleWaveMeta, EventType.Invisible);
+		SpawnFromWaveMeta(mouseOverWaveMeta, EventType.MouseOver);
+		SpawnFromWaveMeta(mouseClickWaveMeta, EventType.MouseClick);
+		SpawnFromWaveMeta(collisionWaveMeta, EventType.OnCollision);
+		SpawnFromWaveMeta(triggerWaveMeta, EventType.OnTrigger);
+		SpawnFromWaveMeta(spawnedWaveMeta, EventType.OnSpawned);
+		SpawnFromWaveMeta(despawnedWaveMeta, EventType.OnDespawned);
+	}
+	
+	private void SpawnFromWaveMeta(TriggeredWaveMetaData wave, EventType eType) {
+		if (wave == null) {
+			return;
+		}
+		
+		if (wave.waveFinishedSpawning 
+			|| (Time.time - wave.waveStartTime < wave.waveSpec.WaveDelaySeconds)
+			|| (Time.time - wave.lastSpawnTime <= wave.singleSpawnTime && wave.singleSpawnTime > Time.deltaTime)) {
+			
+			if (wave.waveFinishedSpawning && wave.waveSpec.enableRepeatWave
+				&& wave.waveRepetitionNumber < wave.waveSpec.maxRepeats
+				&& Time.time - wave.previousWaveEndTime > wave.waveSpec.repeatWavePauseTime) {
+				
+				SetupNextWave(wave.waveSpec, eType, wave.waveRepetitionNumber);
+			}
+			
+			return;
+		}
+		
+		int numberToSpawn = 1;
+		if (wave.singleSpawnTime < Time.deltaTime) {
+			if (wave.singleSpawnTime == 0) {
+				numberToSpawn = wave.currentWaveSize;
+			} else {
+				numberToSpawn = (int) Math.Ceiling(Time.deltaTime / wave.singleSpawnTime);
+			}
+		}
+		
+		//Debug.Log("spawn: " + numberToSpawn);
+		
+		for (var i = 0; i < numberToSpawn; i++) {
+			if (this.CanSpawnOne()) {
+				Transform prefabToSpawn = this.GetSpawnable(wave);		
+				if (prefabToSpawn == null) {
+					Debug.LogError(string.Format("Triggered Spawner '{0}' has no prefab to spawn for event: {1}", 
+						this.name, 
+						eType.ToString()));
+		
+					switch (eType) {
+						case EventType.Visible:
+							visibleWaveMeta = null;
+							break;
+						case EventType.Invisible:
+							invisibleWaveMeta = null;
+							break;
+						case EventType.MouseOver:
+							mouseOverWaveMeta = null;
+							break;
+						case EventType.MouseClick:
+							mouseClickWaveMeta = null;
+							break;
+						case EventType.OnCollision:
+							collisionWaveMeta = null;
+							break;
+						case EventType.OnTrigger:
+							triggerWaveMeta = null;
+							break;
+						case EventType.OnSpawned:
+							spawnedWaveMeta = null;
+							break;
+						case EventType.OnDespawned:
+							despawnedWaveMeta = null;
+							break;
+						default:
+							Debug.LogError("need event stop code for event: " + eType.ToString());
+							break;
+					}
+					
+					return;
+				}
+
+				var spawnPosition = this.GetSpawnPosition(this.trans.position, wave.countSpawned, wave);
+				
+				var spawnedPrefab = SpawnUtility.Spawn(prefabToSpawn, 
+					spawnPosition, this.GetSpawnRotation(prefabToSpawn, wave.countSpawned, wave));
+			
+				if (spawnedPrefab == null) {
+					if (!SpawnUtility.AppIsShuttingDown) {
+						Debug.Log("Could not spawn: " + prefabToSpawn + " : " + Time.time);
+					}
+					return;
+				}
+				
+				this.AfterSpawn(spawnedPrefab, wave);
+			}
+				
+			wave.countSpawned++;
+			
+			if (wave.countSpawned >= wave.currentWaveSize) {
+				if (LevelSettings.IsLoggingOn) {
+					Debug.Log(string.Format("Triggered Spawner '{0}' finished spawning wave from event: {1}.",
+						this.name,
+						eType.ToString()));
+				}
+				wave.waveFinishedSpawning = true;
+				
+				if (wave.waveSpec.enableRepeatWave) {
+					wave.previousWaveEndTime = Time.time;
+					wave.waveRepetitionNumber++;
+				}
+			}
+			
+			wave.lastSpawnTime = Time.time;
+		}
+	}
+	
+	private bool SetupNextWave(TriggeredWaveSpecifics newWave, EventType eventType, int repetionNumber = 0) {
+		if (!newWave.enableWave) { // even in repeating waves we need to check.
+			return false;
+		}
+		
+		if (newWave.NumberToSpawn == 0){
+			return false;	
+		}
+		
+		if (LevelSettings.IsLoggingOn) {
+			Debug.Log(string.Format("Starting wave from triggered spawner: {0}, event: {1}.",
+				this.name,
+				eventType.ToString()));
+		}
+		
+		WavePrefabPool myWavePool = null;
+		
+		if (newWave.spawnSource == WaveSpecifics.SpawnOrigin.PrefabPool) {
+			var poolTrans = newWave.prefabPoolTrans;
+			if (poolTrans == null) {
+				Debug.LogError(string.Format("Spawner '{0}' event: {1} is trying to use a Prefab Pool that can't be found.", 
+					this.name,
+					eventType.ToString()));
+				return false;
+			}
+			
+			myWavePool = poolTrans.GetComponent<WavePrefabPool>();
+		} else {
+			myWavePool = null;
+		}
+		
+		var myCurrentWaveSize = newWave.NumberToSpawn;
+		var mySingleSpawnTime = (float) newWave.TimeToSpawnWholeWave / (float) myCurrentWaveSize;
+		
+		var newMetaWave = new TriggeredWaveMetaData() {
+			wavePool = myWavePool,
+			currentWaveSize = myCurrentWaveSize,
+			waveStartTime = Time.time,
+			singleSpawnTime = mySingleSpawnTime,
+			waveSpec = newWave,
+			waveRepetitionNumber = repetionNumber
+		};
+		
+		switch (eventType) {
+			case EventType.Visible:
+				visibleWaveMeta = newMetaWave;
+				break;
+			case EventType.Invisible:
+				invisibleWaveMeta = newMetaWave;
+				break;
+			case EventType.MouseOver:
+				mouseOverWaveMeta = newMetaWave;
+				break;
+			case EventType.MouseClick:
+				mouseClickWaveMeta = newMetaWave;
+				break;
+			case EventType.OnCollision:
+				collisionWaveMeta = newMetaWave;
+				break;
+			case EventType.OnTrigger:
+				triggerWaveMeta = newMetaWave;
+				break;
+			case EventType.OnSpawned:
+				spawnedWaveMeta = newMetaWave;
+				break;
+			case EventType.OnDespawned:
+				despawnedWaveMeta = newMetaWave;
+				break;
+			default:
+				Debug.LogError("No matching event type: " + eventType.ToString());
+				return false;
+		}
+		
+		return true;
+	}
+	
+	protected virtual Transform GetSpawnable(TriggeredWaveMetaData wave) {	
+		switch (wave.waveSpec.spawnSource) {
+			case WaveSpecifics.SpawnOrigin.Specific:
+				return wave.waveSpec.prefabToSpawn;
+			case WaveSpecifics.SpawnOrigin.PrefabPool:			
+				return wave.wavePool.GetRandomWeightedTransform();
+		}
+
+		return null;
+	}
+		
+	protected virtual bool CanSpawnOne() {
+		return true; // this is for later subclasses to override (or ones you make!)
+	}
+	
+	protected virtual Vector3 GetSpawnPosition(Vector3 pos, int itemSpawnedIndex, TriggeredWaveMetaData wave) {
+		var addVector = Vector3.zero;
+		
+		var currentWave = wave.waveSpec;
+		
+		if (currentWave.enableRandomizations) {
+			addVector.x = UnityEngine.Random.Range(-currentWave.randomDistanceX, currentWave.randomDistanceX);
+			addVector.y = UnityEngine.Random.Range(-currentWave.randomDistanceY, currentWave.randomDistanceY);
+			addVector.z = UnityEngine.Random.Range(-currentWave.randomDistanceZ, currentWave.randomDistanceZ);
+		}
+		
+		if (currentWave.enableIncrements && itemSpawnedIndex > 0) {
+			addVector.x += (currentWave.incrementPosX * itemSpawnedIndex);
+			addVector.y += (currentWave.incrementPosY * itemSpawnedIndex);
+			addVector.z += (currentWave.incrementPosZ * itemSpawnedIndex);
+		}
+		
+		return pos + addVector;
+	}
+	
+	protected virtual Quaternion GetSpawnRotation(Transform prefabToSpawn, int itemSpawnedIndex, TriggeredWaveMetaData wave) {
+		var currentWave = wave.waveSpec;
+		
+		Vector3 euler = prefabToSpawn.rotation.eulerAngles;
+
+		if (currentWave.enableRandomizations && currentWave.randomXRotation) {
+			euler.x = UnityEngine.Random.Range(0f, 360f);			
+		} else if (currentWave.enableIncrements && itemSpawnedIndex > 0) {
+			euler.x += (itemSpawnedIndex * currentWave.incrementRotationX);
+		}
+		
+		if (currentWave.enableRandomizations && currentWave.randomYRotation) {
+				euler.y = UnityEngine.Random.Range(0f, 360f);			
+		} else if (currentWave.enableIncrements && itemSpawnedIndex > 0) {
+			euler.y += (itemSpawnedIndex * currentWave.incrementRotationY);
+		}
+		
+		if (currentWave.enableRandomizations &&  currentWave.randomZRotation) {
+			euler.z = UnityEngine.Random.Range(0f, 360f);			
+		} else if (currentWave.enableIncrements && itemSpawnedIndex > 0) {
+			euler.z += (itemSpawnedIndex * currentWave.incrementRotationZ);
+		}
+
+		return Quaternion.Euler(euler);
+	}
+	
+	protected virtual void AfterSpawn(Transform spawnedTrans, TriggeredWaveMetaData wave) {
+		var currentWave = wave.waveSpec;
+		
+		if (currentWave.enablePostSpawnNudge) {
+			spawnedTrans.Translate(Vector3.forward * currentWave.postSpawnNudgeForward);
+			spawnedTrans.Translate(Vector3.right * currentWave.postSpawnNudgeRight);
+			spawnedTrans.Translate(Vector3.down * currentWave.postSpawnNudgeDown);
+		}
+	}
+}

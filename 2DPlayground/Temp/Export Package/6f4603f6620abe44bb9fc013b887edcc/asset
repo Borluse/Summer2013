@@ -1,0 +1,421 @@
+using UnityEngine;
+using UnityEditor;
+using System.Collections;
+using System.Collections.Generic;
+
+[CustomEditor(typeof(WaveSyncroPrefabSpawner))]
+public class WaveSyncroPrefabSpawnerInspector : Editor {
+	private LevelSettings levSettings;
+	
+	public override void OnInspectorGUI() {
+        EditorGUIUtility.LookLikeControls();
+
+		WaveSyncroPrefabSpawner settings = (WaveSyncroPrefabSpawner)target;
+		
+		var myParent = settings.transform.parent;
+		Transform levelSettingObj = null;
+		LevelSettings levelSettings = null;
+		
+		if (myParent != null) {
+			levelSettingObj = myParent.parent;
+			if (levelSettingObj != null) {
+				levelSettings = levelSettingObj.GetComponent<LevelSettings>();
+			}
+		} 
+		
+		if (myParent == null || levelSettingObj == null || levelSettings == null) {
+			Debug.LogError(string.Format("Spawner: '{0}' is not a child of LevelSettings. Aborting.", this.name));
+			//DrawDefaultInspector();
+			return;
+		}
+
+		if (settings.logoTexture != null) {
+			DTInspectorUtility.DrawTexture(settings.logoTexture);
+		}
+		
+		
+		
+		EditorGUILayout.Separator();
+		EditorGUI.indentLevel = 0;
+		settings.isEnabled = EditorGUILayout.Toggle("Enable Spawner", settings.isEnabled);
+		
+		EditorGUILayout.Separator();
+		EditorGUI.indentLevel = -1;
+		EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
+		
+		var disabledText = "";
+		if (!settings.isEnabled) {
+			disabledText = " --DISABLED--";
+		}
+		
+		settings.isExpanded = DTInspectorUtility.Foldout(settings.isExpanded, 
+			string.Format("Wave Settings ({0}){1}", settings.waveSpecs.Count, disabledText));
+        // BUTTONS...
+        EditorGUILayout.BeginHorizontal(GUILayout.MaxWidth(100));
+
+        var topAdded = false;
+		DTInspectorUtility.FunctionButtons waveButtonPressed = DTInspectorUtility.FunctionButtons.None;
+		
+		if (settings.isEnabled) {
+        // Add expand/collapse buttons if there are items in the list
+        if (settings.waveSpecs.Count > 0) {
+            GUIContent content;
+            var collapseIcon = '\u2261'.ToString();
+            content = new GUIContent(collapseIcon, "Click to collapse all");
+            var masterCollapse = GUILayout.Button(content, EditorStyles.toolbarButton);
+
+            var expandIcon = '\u25A1'.ToString();
+            content = new GUIContent(expandIcon, "Click to expand all");
+            var masterExpand = GUILayout.Button(content, EditorStyles.toolbarButton);
+			if (masterExpand) {
+				ExpandCollapseAll(settings, true);
+			} 
+			if (masterCollapse) {
+				ExpandCollapseAll(settings, false);
+			}
+        } else {
+         	GUILayout.FlexibleSpace();
+        }
+		
+        EditorGUILayout.BeginHorizontal(GUILayout.MaxWidth(50));
+        // A little space between button groups
+        GUILayout.Space(6);
+		
+		var addText = string.Format("Click to add Wave{0}.", settings.waveSpecs.Count > 0 ? " before the first" : "");
+		
+        // Main Add button
+		if (GUILayout.Button(new GUIContent("+", addText), EditorStyles.toolbarButton)) {
+			topAdded = true;
+			if (levelSettings.LevelTimes.Count == 0) {
+				EditorUtility.DisplayDialog(DTInspectorUtility.ALERT_TITLE, "You will not have any Level or Wave #'s to select in your Spawner Wave Settings until you add a Level in LevelSettings. Please do that first.", 
+					DTInspectorUtility.ALERT_OK_TEXT);
+			} else {
+				var newWave = new WaveSpecifics();
+				settings.waveSpecs.Add(newWave);
+			}
+		}
+
+		EditorGUILayout.EndHorizontal();
+
+        EditorGUILayout.EndHorizontal();
+        EditorGUILayout.EndHorizontal();
+		
+		if (settings.isExpanded) { 
+			EditorGUI.indentLevel = 0;
+			
+			int waveToInsertAt = -1;
+			WaveSpecifics waveToDelete = null;
+			WaveSpecifics waveSetting = null;
+			int? waveToMoveUp = null;
+			int? waveToMoveDown = null;
+			LevelWave levelWave = null;
+			
+			// get list of prefab pools.
+			var poolNames = DTInspectorUtility.GetPrefabPoolNames();
+			
+			for (var w = 0; w < settings.waveSpecs.Count; w++) {
+				EditorGUI.indentLevel = 0;
+				waveSetting = settings.waveSpecs[w];
+				levelWave = GetLevelWaveFromWaveSpec(waveSetting);
+				
+	            EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
+	            
+				string sDisabled = "";
+				if (!waveSetting.isExpanded && !waveSetting.enableWave) {
+					sDisabled = " DISABLED ";
+				}
+				
+	            waveSetting.isExpanded = DTInspectorUtility.Foldout(waveSetting.isExpanded, 
+					string.Format("Wave Setting #{0} ({1}/{2}){3}", (w + 1), 
+					waveSetting.SpawnLevelNumber + 1, 
+					waveSetting.SpawnWaveNumber + 1,
+					sDisabled));
+
+	            waveButtonPressed = DTInspectorUtility.AddFoldOutListItemButtons(w, settings.waveSpecs.Count, "Wave", true);
+	            EditorGUILayout.EndHorizontal();
+				
+				switch (waveButtonPressed) {
+					case DTInspectorUtility.FunctionButtons.Remove:
+						waveToDelete = waveSetting;
+						break;
+					case DTInspectorUtility.FunctionButtons.Add:
+						waveToInsertAt = w;
+						break;
+					case DTInspectorUtility.FunctionButtons.ShiftDown:
+						waveToMoveDown = w;
+						break;
+					case DTInspectorUtility.FunctionButtons.ShiftUp:
+						waveToMoveUp = w;
+						break;
+				}
+				
+				if (waveSetting.isExpanded) {
+					EditorGUI.indentLevel = 2;
+					waveSetting.enableWave = EditorGUILayout.BeginToggleGroup("Enable Wave", waveSetting.enableWave);
+					
+					var oldLevelNumber = waveSetting.SpawnLevelNumber;
+					
+					waveSetting.SpawnLevelNumber = EditorGUILayout.IntPopup("Level#", waveSetting.SpawnLevelNumber + 1, LevelNames, LevelIndexes) - 1;
+					
+					if (oldLevelNumber != waveSetting.SpawnLevelNumber) {
+						waveSetting.SpawnWaveNumber = 0;
+					}
+					
+					waveSetting.SpawnWaveNumber = EditorGUILayout.IntPopup("Wave#", waveSetting.SpawnWaveNumber + 1, 
+						WaveNamesForLevel(waveSetting.SpawnLevelNumber), WaveIndexesForLevel(waveSetting.SpawnLevelNumber)) - 1;
+					waveSetting.MinToSpawn = EditorGUILayout.IntSlider("Min to spawn", waveSetting.MinToSpawn, 1, 100);
+					waveSetting.MaxToSpawn = EditorGUILayout.IntSlider("Max to spawn", waveSetting.MaxToSpawn, 1, 100);
+					
+					if (waveSetting.MinToSpawn > waveSetting.MaxToSpawn) {
+						waveSetting.MaxToSpawn = waveSetting.MinToSpawn;
+					} else if (waveSetting.MaxToSpawn < waveSetting.MinToSpawn) {
+						waveSetting.MinToSpawn = waveSetting.MaxToSpawn;
+					}
+					
+					waveSetting.TimeToSpawnWholeWave = EditorGUILayout.Slider("Time to spawn all", waveSetting.TimeToSpawnWholeWave, 0f, SecondsForWave(waveSetting) - .1f);
+					waveSetting.WaveDelaySeconds = EditorGUILayout.Slider("Delay wave (sec)", waveSetting.WaveDelaySeconds, 0f, 50f);
+					
+					waveSetting.spawnSource = (WaveSpecifics.SpawnOrigin) EditorGUILayout.EnumPopup("Prefab Type", waveSetting.spawnSource);
+					switch (waveSetting.spawnSource) {
+						case WaveSpecifics.SpawnOrigin.Specific:
+							waveSetting.prefabToSpawn = (Transform) EditorGUILayout.ObjectField("Prefab to spawn", waveSetting.prefabToSpawn, typeof(Transform), true);
+							break;
+						case WaveSpecifics.SpawnOrigin.PrefabPool:
+							if (poolNames != null) {
+								waveSetting.prefabPoolIndex = 0; // in case not found.
+								if (waveSetting.prefabPoolTrans != null) {
+									for (var i = 0; i < poolNames.Length; i++) {	
+										if (poolNames[i] == waveSetting.prefabPoolTrans.name) {
+											waveSetting.prefabPoolIndex = i; // update for when pool index changes
+										}	
+									}
+								}
+							
+								if (poolNames.Length > 0) {
+									waveSetting.prefabPoolIndex = EditorGUILayout.Popup("Prefab Pool", waveSetting.prefabPoolIndex, poolNames);
+									waveSetting.prefabPoolTrans = DTInspectorUtility.GetFirstMatchingPrefabPool(waveSetting.prefabPoolIndex);
+								} else {
+									DTInspectorUtility.ShowColorWarning("You have no Prefab Pools. Create one first.");
+								}
+							} else {
+								DTInspectorUtility.ShowColorWarning(LevelSettings.NO_PREFAB_POOLS_CONTAINER_ALERT);
+								DTInspectorUtility.ShowColorWarning(LevelSettings.REVERT_LEVEL_SETTINGS_ALERT);
+							}
+							break;
+					}
+					
+					waveSetting.repeatWaveUntilNew = EditorGUILayout.BeginToggleGroup("Repeat Wave", waveSetting.repeatWaveUntilNew);
+					if (waveSetting.repeatWaveUntilNew) {
+						waveSetting.repeatPauseMin = EditorGUILayout.Slider("Repeat Pause Min", waveSetting.repeatPauseMin, 0, 20);
+						waveSetting.repeatPauseMax = EditorGUILayout.Slider("Repeat Pause Max", waveSetting.repeatPauseMax, 0, 20);
+	
+						if (levelWave.waveType == LevelSettings.WaveType.Elimination) {
+							waveSetting.repetitions = EditorGUILayout.IntSlider("Repetitions", waveSetting.repetitions, 2, 15);
+						}
+						
+						if (waveSetting.repeatPauseMin > waveSetting.repeatPauseMax) {
+							waveSetting.repeatPauseMax = waveSetting.repeatPauseMin;
+						} else if (waveSetting.repeatPauseMax < waveSetting.repeatPauseMin) {
+							waveSetting.repeatPauseMin = waveSetting.repeatPauseMax;
+						}
+						
+					}
+					EditorGUILayout.EndToggleGroup();
+					
+					// show randomizations
+					var variantTag = "Randomization";
+					
+					waveSetting.enableRandomizations = EditorGUILayout.BeginToggleGroup(variantTag, waveSetting.enableRandomizations);
+					if (waveSetting.enableRandomizations) {
+						
+						EditorGUILayout.BeginHorizontal(GUILayout.MaxWidth(100));
+			            EditorGUILayout.LabelField("Random Rotation");
+						//GUILayout.FlexibleSpace();
+						waveSetting.randomXRotation = GUILayout.Toggle(waveSetting.randomXRotation, "X");
+						GUILayout.Space(10);
+						waveSetting.randomYRotation = GUILayout.Toggle(waveSetting.randomYRotation, "Y");
+						GUILayout.Space(10);
+						waveSetting.randomZRotation = GUILayout.Toggle(waveSetting.randomZRotation, "Z");
+			            EditorGUILayout.EndHorizontal();
+
+						waveSetting.randomDistanceX = EditorGUILayout.Slider("Rand. Distance X", waveSetting.randomDistanceX, 0, 100);
+						waveSetting.randomDistanceY = EditorGUILayout.Slider("Rand. Distance Y", waveSetting.randomDistanceY, 0, 100);
+						waveSetting.randomDistanceZ = EditorGUILayout.Slider("Rand. Distance Z", waveSetting.randomDistanceZ, 0, 100);
+					}
+					EditorGUILayout.EndToggleGroup();
+
+					// show increments
+					var incTag = "Incremental Settings";
+					waveSetting.enableIncrements = EditorGUILayout.BeginToggleGroup(incTag, waveSetting.enableIncrements);
+					if (waveSetting.enableIncrements) {
+						waveSetting.incrementPosX = EditorGUILayout.Slider("Distance X", waveSetting.incrementPosX, -100f, 100f);
+						waveSetting.incrementPosY = EditorGUILayout.Slider("Distance Y", waveSetting.incrementPosY, -100f, 100f);
+						waveSetting.incrementPosZ = EditorGUILayout.Slider("Distance Z", waveSetting.incrementPosZ, -100f, 100f);
+
+						EditorGUILayout.Separator();
+						
+						if (waveSetting.enableRandomizations && waveSetting.randomXRotation) {
+							DTInspectorUtility.ShowColorWarning("Rotation X - cannot be used with Random Rotation X.");
+						} else {
+							waveSetting.incrementRotationX = EditorGUILayout.Slider("Rotation X", waveSetting.incrementRotationX, -180f, 180f);
+						}
+
+						if (waveSetting.enableRandomizations && waveSetting.randomYRotation) {
+							DTInspectorUtility.ShowColorWarning("Rotation Y - cannot be used with Random Rotation Y.");
+						} else {
+							waveSetting.incrementRotationY = EditorGUILayout.Slider("Rotation Y", waveSetting.incrementRotationY, -180f, 180f);
+						}
+
+						if (waveSetting.enableRandomizations && waveSetting.randomZRotation) {
+							DTInspectorUtility.ShowColorWarning("Rotation Z - cannot be used with Random Rotation Z.");
+						} else {
+							waveSetting.incrementRotationZ = EditorGUILayout.Slider("Rotation Z", waveSetting.incrementRotationZ, -180f, 180f);
+						}
+					}
+					EditorGUILayout.EndToggleGroup();
+
+
+					
+					// show increments
+					incTag = "Post-spawn Nudge Settings";
+					waveSetting.enablePostSpawnNudge = EditorGUILayout.BeginToggleGroup(incTag, waveSetting.enablePostSpawnNudge);
+					if (waveSetting.enablePostSpawnNudge) {
+						waveSetting.postSpawnNudgeForward = EditorGUILayout.Slider("Nudge Forward", waveSetting.postSpawnNudgeForward, -100f, 100f);
+						waveSetting.postSpawnNudgeRight = EditorGUILayout.Slider("Nudge Right", waveSetting.postSpawnNudgeRight, -100f, 100f);
+						waveSetting.postSpawnNudgeDown = EditorGUILayout.Slider("Nudge Down", waveSetting.postSpawnNudgeDown, -100f, 100f);
+					}
+					EditorGUILayout.EndToggleGroup();
+					
+					
+					
+					EditorGUILayout.EndToggleGroup();
+					EditorGUILayout.Separator();
+				}
+			}
+			
+			if (waveToDelete != null) {
+				settings.waveSpecs.Remove(waveToDelete);
+			}
+			
+			if (waveToInsertAt > -1) {
+				if (levelSettings.LevelTimes.Count == 0) {
+					EditorUtility.DisplayDialog(DTInspectorUtility.ALERT_TITLE, "You will not have any Level or Wave #'s to select in your Spawner Wave Settings until you add a Level in LevelSettings. Please do that first.", 
+						DTInspectorUtility.ALERT_OK_TEXT);
+				} else {
+					var newWave = new WaveSpecifics();
+					settings.waveSpecs.Insert(waveToInsertAt + 1, newWave);
+				}
+			}
+			
+			if (waveToMoveUp.HasValue) {
+				var item = settings.waveSpecs[waveToMoveUp.Value];
+				settings.waveSpecs.Insert(waveToMoveUp.Value - 1, item);
+				settings.waveSpecs.RemoveAt(waveToMoveUp.Value + 1);
+			}
+			
+			if (waveToMoveDown.HasValue) {
+				var index = waveToMoveDown.Value + 1;
+
+				var item = settings.waveSpecs[index];
+				settings.waveSpecs.Insert(index - 1, item);
+				settings.waveSpecs.RemoveAt(index + 1);
+			}
+		} 
+		} else {
+			EditorGUILayout.EndHorizontal();
+		}
+			
+		if (GUI.changed || topAdded || waveButtonPressed != DTInspectorUtility.FunctionButtons.None) {
+  			EditorUtility.SetDirty(target);	// or it won't save the data!!
+		}
+		
+		//DrawDefaultInspector();
+    }
+	
+	private void ExpandCollapseAll(WaveSyncroPrefabSpawner spawner, bool isExpand) {
+		foreach (var wave in spawner.waveSpecs) {
+			wave.isExpanded = isExpand;
+		}
+	}
+	
+	private string[] LevelNames {
+		get {
+			var names = new string[GetLevelSettings.LevelTimes.Count];
+			for (var i = 0; i < GetLevelSettings.LevelTimes.Count; i++) {
+				names[i] = (i + 1).ToString();
+			}
+			
+			return names;
+		}
+	}
+
+	private int[] LevelIndexes {
+		get {
+			var indexes = new int[GetLevelSettings.LevelTimes.Count];
+			
+			for (var i = 0; i < GetLevelSettings.LevelTimes.Count; i++) {
+				indexes[i] = i + 1;
+			}
+			
+			return indexes;
+		}
+	}
+	
+	private string[] WaveNamesForLevel(int levelNumber) {
+		if (GetLevelSettings.LevelTimes.Count <= levelNumber) {
+			return new string[0];
+		}
+		
+		var level = GetLevelSettings.LevelTimes[levelNumber];
+		var names = new string[level.WaveSettings.Count];
+		
+		for (var i = 0; i < level.WaveSettings.Count; i++) {
+			names[i] = (i + 1).ToString();
+		}
+		
+		return names;
+	}
+
+	private int[] WaveIndexesForLevel(int levelNumber) {
+		if (GetLevelSettings.LevelTimes.Count <= levelNumber) {
+			return new int[0];
+		}
+
+		var level = GetLevelSettings.LevelTimes[levelNumber];
+		var indexes = new int[level.WaveSettings.Count];
+		
+		for (var i = 0; i < level.WaveSettings.Count; i++) {
+			indexes[i] = i + 1;
+		}
+		
+		return indexes;
+	}
+	
+	private LevelWave GetLevelWaveFromWaveSpec(WaveSpecifics waveSpec) {
+		var levelNumber = waveSpec.SpawnLevelNumber;
+		var waveNumber = waveSpec.SpawnWaveNumber;
+		
+		if (GetLevelSettings.LevelTimes.Count <= levelNumber) {
+			return null;
+		}
+		
+		var wave = GetLevelSettings.LevelTimes[levelNumber].WaveSettings[waveNumber];
+		return wave;
+	}
+	
+	private float SecondsForWave(WaveSpecifics waveSpec) {
+		var wave  = GetLevelWaveFromWaveSpec(waveSpec);
+		
+		return wave.waveType == LevelSettings.WaveType.Timed ? wave.WaveDuration : 99;
+	}
+	
+	private LevelSettings GetLevelSettings {
+		get {
+			if (levSettings == null) {			
+				levSettings = DTInspectorUtility.GetLevelSettings;
+			}
+			
+			return levSettings;
+		}
+	}
+}
