@@ -1,0 +1,24 @@
+# Ignore The following directories / file extensions
+Library
+Temp
+PlayerPlayground/CuteTankForce.app
+PlayerPlayground\CuteTankForce.app
+
+PlayerPlayground\Library
+PlayerPlayground\Temp
+PlayerPlayground/Library
+PlayerPlayground/Temp
+
+# Ignore the following file extensions
+*.exe
+*.vcproject
+*.sln
+*.exe
+*.swp
+*.DS_Store
+.DS_Store
+Thumbs.db
+#cached code completion data
+*.pidb
+.pidb
+*.swo
