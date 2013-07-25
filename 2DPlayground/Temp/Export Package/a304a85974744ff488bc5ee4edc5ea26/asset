@@ -1,9 +1,0 @@
-using UnityEngine;
-using UnityEditor;
-
-public static class DTSupport {
-   [MenuItem("Dark Tonic/Support Page")]
-    static void OpenMyWebsite() {
-        Application.OpenURL("http://www.darktonic.com/p/support.html");
-    }
-}
